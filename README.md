@@ -14,7 +14,7 @@ environment rather than a convenient demo setup.
 
 ## Deployed application
 
-Live prototype: **`<paste your https://....azurecontainerapps.io URL here>`**
+Live prototype: **https://ttb-verifier.purplemeadow-81d82a03.eastus.azurecontainerapps.io**
 
 - `/` — single-label review (extract → correct → approve/reject)
 - `/batch` — batch triage against an application manifest
