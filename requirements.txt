@@ -6,7 +6,6 @@ python-dotenv>=1.0
 
 # Model SDKs — install the ones for the models you enable.
 openai>=1.40          # Azure OpenAI
-anthropic>=0.39       # Claude via Microsoft Foundry
 google-genai>=0.3     # Gemini (external benchmark)
 requests>=2.31        # Azure AI Vision OCR + eval ingest
 Pillow>=10.0          # image handling
