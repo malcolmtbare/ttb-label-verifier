@@ -60,6 +60,24 @@ def test_does_not_infer_us_from_foreign_address():
     assert not matching.infer_us_country("Bordeaux, France")
     assert not matching.infer_us_country("Toronto, ON")        # Ontario is not a US state
 
+def test_us_origin_from_city_in_marketing_copy():
+    # A real U.S. city wrapped in marketing copy, no state code — should still infer U.S.
+    assert matching.infer_us_country("SAN FRANCISCO BORN & BREWED")
+    assert matching.infer_us_country("Distilled in Chicago")
+    assert matching.infer_us_country("St. Louis, proudly brewed since 1850")
+
+def test_us_origin_from_spelled_out_state():
+    assert matching.infer_us_country("Brewed in Oregon")
+    assert matching.infer_us_country("A Vermont creamery product")
+
+def test_us_origin_does_not_overfire_on_ambiguous_names():
+    # "London Dry Gin" is a style, not a U.S. origin; must not infer U.S.
+    assert not matching.infer_us_country("London Dry Gin")
+    assert not matching.infer_us_country("Hamburg, Germany")
+    assert not matching.infer_us_country("Product of Dublin, Ireland")
+    # "Georgia" is also a country and a wine origin — deliberately not inferred from the bare name
+    assert not matching.infer_us_country("Saperavi from Georgia")
+
 def test_country_usa_variants_match():
     r = matching.compare_country("USA", "United States")
     assert r.status is Status.PASS
@@ -124,3 +142,26 @@ def test_reworded_warning_fails_with_diff():
 def test_not_bold_downgrades_to_review():
     r = verify_warning(CANONICAL_WARNING, bold_visual=False)
     assert r.status is Status.REVIEW
+
+
+# --- Multiple-SKU handling (graceful edge case) ----------------------------
+
+def test_multiple_products_flagged_not_fabricated():
+    """A photo with several distinct SKUs is flagged, with a clear message, rather
+    than silently producing one blended verdict."""
+    from app.schema import LabelExtraction, ApplicationData
+    from app.verifier import verify
+    ex = LabelExtraction(is_alcohol_label=True, multiple_products=True, product_count=4,
+                         brand_name="Koval", class_type="Bourbon Whiskey")
+    rep = verify(ex, ApplicationData(), "test", 0)
+    assert rep.multiple_products is True
+    assert rep.product_count == 4
+    assert rep.message and "multiple products" in rep.message.lower()
+
+def test_single_product_not_flagged():
+    from app.schema import LabelExtraction, ApplicationData
+    from app.verifier import verify
+    rep = verify(LabelExtraction(is_alcohol_label=True, brand_name="Koval"),
+                 ApplicationData(), "test", 0)
+    assert rep.multiple_products is False
+    assert rep.message is None

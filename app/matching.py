@@ -157,15 +157,51 @@ _STATE_RE = re.compile(r",\s*([A-Z]{2})\b")
 _US_WORDS_RE = re.compile(r"\b(u\.?\s?s\.?\s?a\.?|u\.?\s?s\.?|united states(?: of america)?)\b", re.I)
 _US_CANON = {"usa", "us", "united states", "united states of america", "america"}
 
+# Full U.S. state names, for labels that spell out the state ("Brewed in Oregon")
+# rather than abbreviating it. "Georgia" is deliberately omitted: it is also a country
+# and a notable wine origin, so inferring U.S. from a bare "Georgia" would be wrong.
+US_STATE_NAMES = {
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut",
+    "delaware", "florida", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas",
+    "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire",
+    "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
+    "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota",
+    "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia",
+    "wisconsin", "wyoming", "district of columbia",
+}
+# A curated set of unambiguously-U.S. cities, so a label that names its city in marketing
+# copy ("SAN FRANCISCO BORN & BREWED") still reads as domestic even with no state code.
+# Internationally-ambiguous single-word names (London, Dublin, Hamburg, Paris, Athens,
+# Berlin, Vienna, Moscow, etc.) are intentionally excluded to avoid false U.S. inferences.
+US_CITIES = {
+    "san francisco", "los angeles", "new york city", "brooklyn", "chicago", "seattle",
+    "san diego", "new orleans", "las vegas", "denver", "austin", "nashville", "milwaukee",
+    "cincinnati", "st louis", "saint louis", "kansas city", "salt lake city", "philadelphia",
+    "pittsburgh", "minneapolis", "houston", "dallas", "phoenix", "san antonio", "san jose",
+    "sacramento", "oakland", "portland", "boston", "detroit", "atlanta", "miami", "louisville",
+    "asheville", "grand rapids", "fort collins", "san luis obispo", "napa", "sonoma",
+}
+# One regex over both sets, longest-first so multi-word names match before any substring.
+_PLACE_TERMS = sorted(US_STATE_NAMES | US_CITIES, key=len, reverse=True)
+_PLACE_RE = re.compile(r"\b(" + "|".join(re.escape(t) for t in _PLACE_TERMS) + r")\b")
+
 
 def infer_us_country(name_address: Optional[str]) -> bool:
-    """True if the address indicates a U.S. location (a state code in a
-    'City, ST' pattern, or an explicit USA / United States mention)."""
+    """True if the text indicates a U.S. location: an explicit USA / United States
+    mention, a 'City, ST' state code, a spelled-out U.S. state name, or a recognized
+    U.S. city — the last two matched anywhere in the text, so a city embedded in
+    marketing copy ('San Francisco born & brewed') still counts."""
     if not name_address:
         return False
     if _US_WORDS_RE.search(name_address):
         return True
-    return any(m.group(1) in US_STATES for m in _STATE_RE.finditer(name_address))
+    if any(m.group(1) in US_STATES for m in _STATE_RE.finditer(name_address)):
+        return True
+    # normalize punctuation/case so "St. Louis" -> "st louis" and trailing words don't block
+    norm = re.sub(r"[^a-z0-9 ]", " ", name_address.lower())
+    norm = re.sub(r"\s+", " ", norm).strip()
+    return bool(_PLACE_RE.search(norm))
 
 
 def canonical_country(s: Optional[str]) -> str:
@@ -177,7 +213,7 @@ def canonical_country(s: Optional[str]) -> str:
 
 def compare_country(expected: Optional[str], detected: Optional[str], inferred: bool = False) -> FieldResult:
     field, label = "country_of_origin", "Country of origin"
-    note = " (inferred from U.S. address)" if inferred else ""
+    note = " (inferred from a U.S. location on the label)" if inferred else ""
     if not expected and not detected:
         return _na(field, label, expected, detected, "Not present on form or label.")
     if not detected:
