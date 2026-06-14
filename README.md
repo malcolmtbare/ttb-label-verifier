@@ -192,27 +192,27 @@ matcher (`/api/compare`) — no extra model calls, so correction is instant and 
 The interviews are full of constraints disguised as anecdotes. Each one shaped a
 decision:
 
-- **Sarah — "results back in about 5 seconds or nobody uses it."** Single-pass
+- **Interviewer 1 — "results back in about 5 seconds or nobody uses it."** Single-pass
   extraction with a fast model (GPT-5.4-mini / Gemini 3 Flash); no chained
   multi-agent workflow. The label is read in one call on upload.
-- **Sarah / Janet — importers dump 200–300 applications at once.** A dedicated
+- **Interviewer 1 / Interviewer 2 — importers dump 200–300 applications at once.** A dedicated
   batch triage view (`/batch`) processes a drop concurrently and surfaces only the
   exceptions — see Batch processing.
-- **Dave — "you need judgment; STONE'S THROW vs Stone's Throw is the same thing."**
+- **Interviewer 3 — "you need judgment; STONE'S THROW vs Stone's Throw is the same thing."**
   Brand and class use normalization + similarity; trivial case/punctuation
   differences pass, genuinely ambiguous ones return **Review** rather than a hard
   fail, and every detected field is editable so the human stays in the loop.
-- **Jenny — the warning must be exact, and "GOVERNMENT WARNING" must be caps/bold.**
+- **Interviewer 5 — the warning must be exact, and "GOVERNMENT WARNING" must be caps/bold.**
   The warning is checked against the canonical text with a caps check; a title-case
   "Government Warning" fails with a reason. (See the warning section for an
   important refinement.)
 - **Jenny — labels shot at angles, with glare.** Multimodal models read skewed and
   low-light photos far better than classic OCR; the prompt tells the model to read
   rotated images.
-- **Dave / Jenny — wildly varying tech comfort.** One screen: pick a model, the
+- **Interviewer 3  /Interviewer 5  — wildly varying tech comfort.** One screen: pick a model, the
   fields auto-fill, correct against the image beside them, read a verdict. Status is
   shown with color **and** an icon **and** a word — never color alone.
-- **Marcus — Azure since 2019, a firewall that blocks outbound traffic, FedRAMP.**
+- **Interviewer 4 — Azure since 2019, a firewall that blocks outbound traffic, FedRAMP.**
   See Models & the Azure boundary.
 
 ---
