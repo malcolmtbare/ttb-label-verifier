@@ -33,7 +33,7 @@ each field on the image; it never decides pass/fail.
 
 **Tools.** Python 3.12, FastAPI + Uvicorn, Pydantic v2 (the extraction schema), Azure
 OpenAI (in-boundary extraction), Azure AI Vision Read (the locate/zoom overlay), with
-optional Claude via Microsoft Foundry and Gemini (external benchmark) behind the same
+optional Gemini (external benchmark) behind the same
 interface; Pillow + pillow-heif (HEIC support); pytest. The frontend is dependency-free
 HTML/JS. Containerized and deployed on Azure Container Apps.
 
@@ -226,7 +226,6 @@ the compliance posture of each option *is* part of the answer.
 | Model | Boundary | Notes |
 |---|---|---|
 | **Azure OpenAI** (e.g. GPT-5.4-mini) | In-boundary (Azure) | First-party, runs in your Azure region via the `/openai/v1` endpoint, FedRAMP High in Azure Government. No external egress — directly answers Marcus's firewall concern. |
-| **Claude (Microsoft Foundry)** | Azure-native access | Credentials, billing, and governance flow through Azure/Foundry. Inference currently runs on Anthropic-hosted infrastructure rather than inside an Azure region — a footnote only under strict FedRAMP data-residency rules. |
 | **Gemini** | External | Not hosted in Azure; an outbound call to Google. Included as a performance **benchmark**, and labeled external — it would be blocked by the agency's firewall in production. |
 
 Which model is most accurate per field is left to the eval harness, not assumed.
@@ -237,8 +236,7 @@ the harness quantifies.
 
 **Production note.** The prototype runs on these models directly for portability.
 In the agency's FedRAMP'd, firewalled environment the in-boundary choice is Azure
-OpenAI (no egress); Claude's FedRAMP path is AWS Bedrock GovCloud or Vertex Assured
-Workloads (cross-cloud from Azure); Gemini would require a cross-cloud Vertex
+OpenAI (no egress);Gemini would require a cross-cloud Vertex
 arrangement. The prompt and schema port across models, but behavior differs, so the
 eval harness should be re-run against whatever production model is chosen.
 
@@ -364,9 +362,7 @@ a custom domain is optional and goes last.
 
 GPT models browsed and deployed through the Foundry portal are still served on the
 Azure OpenAI endpoint (`https://your-resource.openai.azure.com/openai/v1`) and called
-with the standard `OpenAI` client — the v1 API needs no dated `api-version`. Partner
-models like Claude are different: they use a Foundry endpoint and the provider's own
-SDK, which is why the Claude adapter is built separately around the Anthropic SDK.
+with the standard `OpenAI` client — the v1 API needs no dated `api-version`. 
 Set `AZURE_OPENAI_DEPLOYMENT` to the deployment **name** you assigned (case-sensitive),
 which may differ from the model's catalog name.
 
