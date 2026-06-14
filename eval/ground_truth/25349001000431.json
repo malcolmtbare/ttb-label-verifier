@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25349001000431",
+  "application": {
+    "brand_name": "Archetype Distillery Grape Neutral Spirits With Natural Flavors",
+    "class_type": "other specialties & proprietaries",
+    "country_of_origin": "United States"
+  },
+  "product_name": "Chai Distilled Spirit",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

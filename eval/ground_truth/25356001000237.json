@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25356001000237",
+  "application": {
+    "brand_name": "Clante",
+    "class_type": "table white wine",
+    "country_of_origin": "Italy"
+  },
+  "product_name": "Sfuso Bianco",
+  "domestic_or_imported": "imported",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

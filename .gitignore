@@ -1,0 +1,20 @@
+# Secrets — never commit credentials
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+
+# Local eval images and build bundles
+eval/ground_truth/*.jpg
+eval/ground_truth/*.png
+eval/ground_truth/*.webp
+*.zip

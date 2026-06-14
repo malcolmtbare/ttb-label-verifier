@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25337001000089",
+  "application": {
+    "brand_name": "2 Black Dogs",
+    "class_type": "vermouth/mixed types",
+    "country_of_origin": "United States"
+  },
+  "product_name": "Dry Vermouth",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

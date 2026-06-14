@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25357001000566",
+  "application": {
+    "brand_name": "Leese-Fitch",
+    "class_type": "table red wine",
+    "country_of_origin": "United States"
+  },
+  "product_name": "Authentic California Pinot Noir",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

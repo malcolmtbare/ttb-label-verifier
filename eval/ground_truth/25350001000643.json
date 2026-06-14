@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25350001000643",
+  "application": {
+    "brand_name": "Stoneyard Brewing Co",
+    "class_type": "malt beverages specialities - flavored",
+    "country_of_origin": "United States"
+  },
+  "product_name": "Chocolate After Midnight",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

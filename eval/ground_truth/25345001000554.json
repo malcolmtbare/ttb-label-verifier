@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25345001000554",
+  "application": {
+    "brand_name": "Crux Fermentation Project",
+    "class_type": "cereal beverages - near beer (non alcoholic)",
+    "country_of_origin": "United States"
+  },
+  "product_name": "N\u00f8m\u00f8 Wild Horizon Wheat",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

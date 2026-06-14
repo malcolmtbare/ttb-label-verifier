@@ -1,0 +1,16 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.7
+python-dotenv>=1.0
+
+# Model SDKs — install the ones for the models you enable.
+openai>=1.40          # Azure OpenAI
+anthropic>=0.39       # Claude via Microsoft Foundry
+google-genai>=0.3     # Gemini (external benchmark)
+requests>=2.31        # Azure AI Vision OCR + eval ingest
+Pillow>=10.0          # image handling
+pillow-heif>=0.16     # decode iPhone HEIC/HEIF uploads
+
+# Dev
+pytest>=8.0

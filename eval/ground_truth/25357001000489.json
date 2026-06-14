@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25357001000489",
+  "application": {
+    "brand_name": "Abate Franca Alba",
+    "class_type": "table red wine",
+    "country_of_origin": "Italy"
+  },
+  "product_name": "Syrah, Merlot",
+  "domestic_or_imported": "imported",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

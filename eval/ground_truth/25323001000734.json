@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25323001000734",
+  "application": {
+    "brand_name": "Ellie Rose Vinelli",
+    "class_type": "sparkling wine/champagne",
+    "country_of_origin": "Italy"
+  },
+  "product_name": "Sparkling Ros\u00e9",
+  "domestic_or_imported": "imported",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

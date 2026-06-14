@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25353001000528",
+  "application": {
+    "brand_name": "West Side Brewing",
+    "class_type": "malt beverages specialities - flavored",
+    "country_of_origin": "United States"
+  },
+  "product_name": "Honor Beer",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}

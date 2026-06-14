@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TTB Label Verifier — Batch</title>
+<style>
+  :root{
+    --ink:#14213d; --muted:#5b6878; --line:#d8dee6; --bg:#eef1f4; --card:#ffffff;
+    --brand:#2a4d8f; --pass:#1b7f4b; --pass-bg:#e6f4ec; --fail:#b42318; --fail-bg:#fbeae8;
+    --review:#9a5a00; --review-bg:#fdf2e2; --radius:10px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--font);}
+  header{background:var(--ink);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  header h1{margin:0;font-size:19px;font-weight:700;}
+  header p{margin:2px 0 0;font-size:13px;color:#c3cbd9;}
+  header a{color:#cfe0ff;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;}
+  main{max-width:1100px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .card h2{margin:0 0 10px;font-size:15px;}
+  .setup{display:grid;gap:18px;grid-template-columns:1fr;}
+  @media(min-width:820px){.setup{grid-template-columns:1fr 1fr 1fr;}}
+  #drop{border:2px dashed #b6c0cd;border-radius:8px;padding:20px 14px;text-align:center;cursor:pointer;background:#fafbfc;}
+  #drop.over{border-color:var(--brand);background:#f0f4fc;}
+  #drop strong{display:block;font-size:14px;} #drop span{font-size:12px;color:var(--muted);}
+  .count{font-size:13px;color:var(--muted);margin-top:8px;}
+  select,input[type=file]{width:100%;font:inherit;font-size:14px;}
+  select{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+  .modelnote{font-size:12px;color:var(--muted);margin-top:6px;}
+  .filehint{font-size:12px;color:var(--muted);margin-top:8px;}
+  .linkbtn{background:none;border:0;color:var(--brand);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0;}
+  button.primary{padding:12px 18px;font-size:15px;font-weight:700;color:#fff;background:var(--brand);border:0;border-radius:8px;cursor:pointer;}
+  button.primary:disabled{background:#9aa7bd;cursor:not-allowed;}
+  .runbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .runbar .busy{color:var(--muted);font-size:14px;}
+
+  .summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .pill{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;cursor:pointer;border:1px solid transparent;}
+  .pill.sel{outline:2px solid var(--brand);}
+  .p-all{background:#eef1f4;color:var(--ink);} .p-pass{background:var(--pass-bg);color:var(--pass);}
+  .p-fail{background:var(--fail-bg);color:var(--fail);} .p-review{background:var(--review-bg);color:var(--review);}
+
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top;}
+  th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  tr.main{cursor:pointer;} tr.main:hover{background:#f7faff;}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;}
+  .c-pass{background:var(--pass-bg);color:var(--pass);} .c-fail{background:var(--fail-bg);color:var(--fail);}
+  .c-review{background:var(--review-bg);color:var(--review);} .c-na{background:#eef1f4;color:var(--muted);} .c-error{background:var(--fail-bg);color:var(--fail);}
+  .issues{font-size:13px;color:var(--muted);}
+  .detail td{background:#fafbfc;}
+  .detail table{margin:4px 0;}
+  .detail .rname{font-weight:600;width:120px;}
+  .err{background:var(--fail-bg);color:var(--fail);padding:12px;border-radius:8px;font-weight:600;font-size:14px;}
+  .empty{color:var(--muted);text-align:center;padding:30px;}
+  .caret{display:inline-block;width:14px;color:var(--muted);}
+
+  /* in-page review queue overlay */
+  #reviewer{position:fixed;inset:0;background:rgba(13,22,38,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto;}
+  #reviewer[hidden]{display:none;}
+  .rv-card{background:var(--card);border-radius:12px;max-width:1100px;width:100%;padding:18px;}
+  .rv-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
+  .rv-top .prog{font-weight:700;} .rv-top .file{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .rv-body{display:grid;gap:18px;grid-template-columns:1fr;}
+  @media(min-width:820px){.rv-body{grid-template-columns:1fr 380px;align-items:start;}}
+  #rv-imgbox{position:relative;overflow:hidden;border-radius:8px;background:#0d1626;min-height:240px;display:flex;align-items:center;justify-content:center;line-height:0;}
+  #rv-img{max-width:100%;width:100%;height:auto;}
+  #rv-overlay{position:absolute;pointer-events:none;}
+  .ocr-box{position:absolute;border:2px solid #e8a400;background:rgba(255,207,51,.30);border-radius:3px;}
+  #rv-overlay.dim{background:rgba(13,22,38,.45);}
+  .fld{padding:10px 0;border-bottom:1px solid var(--line);} .fld:last-child{border-bottom:0;}
+  .fld-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;}
+  .fld-head .name{font-weight:600;font-size:13px;}
+  .ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+  input.f{width:100%;padding:7px 9px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;background:#fbfcfe;}
+  textarea.warn{width:100%;min-height:70px;padding:7px 9px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;resize:vertical;background:#fbfcfe;}
+  .reason{font-size:12px;color:var(--muted);margin-top:4px;}
+  .loc{background:none;border:1px solid var(--line);color:var(--brand);font:inherit;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;cursor:pointer;}
+  .loc[hidden]{display:none;} .loc.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+  .ocrbadge{font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;} .ocrbadge[hidden]{display:none;}
+  .ocrbadge.ok{background:var(--pass-bg);color:var(--pass);} .ocrbadge.no{background:#fdf2e2;color:var(--review);}
+  .verdict{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;font-weight:700;font-size:14px;margin-bottom:8px;}
+  .v-pass{background:var(--pass-bg);color:var(--pass);} .v-fail{background:var(--fail-bg);color:var(--fail);} .v-review{background:var(--review-bg);color:var(--review);} .v-idle{background:#eef1f4;color:var(--muted);}
+  .rv-actions{display:flex;gap:10px;margin:12px 0;}
+  .rv-actions button{flex:1;padding:11px;font:inherit;font-size:15px;font-weight:700;color:#fff;border:0;border-radius:8px;cursor:pointer;}
+  #rv-approve{background:var(--pass);} #rv-reject{background:var(--fail);}
+  .rv-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+  .rv-nav button{padding:8px 12px;font:inherit;font-weight:600;color:var(--brand);background:#fff;border:1px solid var(--line);border-radius:8px;cursor:pointer;}
+  .rv-nav button:disabled{color:#9aa7bd;cursor:not-allowed;}
+  .rv-decided{font-size:13px;font-weight:700;}
+  #rvstrcanvas{max-width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;}
+  button.ghost{width:100%;padding:9px;font:inherit;font-size:14px;font-weight:600;color:var(--brand);background:#fff;border:1px solid var(--line);border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>TTB Label Verifier — Batch</h1>
+    <p>Triage a drop of labels. Clears the obvious passes; routes failures and reviews to a human.</p>
+  </div>
+  <a href="/">← Single label review</a>
+</header>
+
+<main>
+  <div class="setup">
+    <section class="card">
+      <h2>1. Labels</h2>
+      <div id="drop" tabindex="0" role="button" aria-label="Upload label images">
+        <strong>Drop label images</strong>
+        <span>or click to choose &middot; multiple files</span>
+        <input id="files" type="file" accept="image/*,.heic,.heif" multiple hidden />
+      </div>
+      <div class="count" id="filecount"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Application data <span style="font-weight:400;color:var(--muted);font-size:12px">(optional)</span></h2>
+      <input id="manifest" type="file" accept=".csv" />
+      <div class="filehint">
+        CSV with a <code>filename</code> column plus any of: brand_name, class_type,
+        alcohol_content, net_contents, name_address, country_of_origin.
+        Without it, each label is checked <strong>warning-only</strong>.
+        <br><button class="linkbtn" id="tmpl">Download a template for the selected files</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Model</h2>
+      <select id="model" aria-describedby="model-note"></select>
+      <p class="modelnote" id="model-note"></p>
+    </section>
+  </div>
+
+  <div class="runbar">
+    <button class="primary" id="run" disabled>Run batch</button>
+    <span class="busy" id="status"></span>
+  </div>
+
+  <section class="card" id="resultsCard" hidden>
+    <div class="summary" id="summary"></div>
+    <div class="runbar" id="reviewbar" hidden style="margin-bottom:12px;">
+      <button class="primary" id="reviewBtn"></button>
+      <span class="busy" id="reviewinfo"></span>
+    </div>
+    <div id="results"></div>
+  </section>
+</main>
+
+<div id="reviewer" hidden>
+  <div class="rv-card">
+    <div class="rv-top">
+      <span class="prog" id="rv-progress"></span>
+      <span class="file" id="rv-file"></span>
+      <button class="linkbtn" id="rv-close">Close ✕</button>
+    </div>
+    <div class="rv-body">
+      <div><div id="rv-imgbox"><img id="rv-img" alt="label" /><div id="rv-overlay"></div></div>
+        <div id="rvzoompanel" hidden style="margin-top:10px;"><canvas id="rvzoomcanvas" style="max-width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;display:block;"></canvas><div class="reason">Zoomed-in view of the located text (auto-straightened if rotated)</div></div>
+      </div>
+      <div>
+        <div class="verdict v-idle" id="rv-verdict"></div>
+        <div id="rv-fields"></div>
+        <div class="rv-actions"><button id="rv-approve">✓ Approve</button><button id="rv-reject">✕ Reject</button></div>
+        <div class="rv-nav"><button id="rv-prev">← Prev</button><span class="rv-decided" id="rv-decided"></span><button id="rv-next">Next →</button></div>
+        <button class="ghost" id="rv-finish">⤓ Finish &amp; download determinations</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const FIELDS = [["brand_name","Brand name"],["class_type","Class / type"],["alcohol_content","Alcohol content"],
+  ["net_contents","Net contents"],["name_address","Name & address"],["country_of_origin","Country of origin"],
+  ["government_warning","Government warning"]];
+let imageFiles=[], manifestFile=null, allResults=[], filter="all";
+
+async function loadModels(){
+  const sel=$("#model");
+  try{
+    const models=await (await fetch("/api/models")).json();
+    if(!models.length){ sel.innerHTML="<option value=''>No models configured</option>"; return; }
+    sel.innerHTML=models.map(m=>`<option value="${m.key}" data-note="${m.boundary_note}" data-boundary="${m.boundary}">${m.label}</option>`).join("");
+    sel.onchange=showNote; showNote();
+  }catch(e){ sel.innerHTML="<option>Could not load models</option>"; }
+}
+function showNote(){ const o=$("#model").selectedOptions[0]; $("#model-note").textContent=o?`${o.dataset.boundary} — ${o.dataset.note}`:""; }
+
+const drop=$("#drop"), filesInput=$("#files");
+drop.onclick=()=>filesInput.click();
+drop.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();filesInput.click();} };
+["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("drop",e=>setImages(e.dataTransfer.files));
+filesInput.onchange=()=>setImages(filesInput.files);
+function setImages(list){
+  imageFiles=[...list].filter(f=>(f.type&&f.type.startsWith("image/"))|| /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name||""));
+  $("#filecount").textContent=imageFiles.length?`${imageFiles.length} image${imageFiles.length>1?"s":""} ready`:"";
+  $("#run").disabled=imageFiles.length===0;
+}
+$("#manifest").onchange=e=>{ manifestFile=e.target.files[0]||null; };
+
+$("#tmpl").onclick=()=>{
+  if(!imageFiles.length){ alert("Choose label images first."); return; }
+  const header="filename,brand_name,class_type,alcohol_content,net_contents,name_address,country_of_origin";
+  const rows=imageFiles.map(f=>`${f.name},,,,,,`);
+  const csv=[header,...rows].join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="manifest_template.csv"; a.click();
+};
+
+$("#run").onclick=async()=>{
+  $("#run").disabled=true; $("#status").textContent=`Processing ${imageFiles.length} labels…`;
+  const fd=new FormData();
+  fd.append("model",$("#model").value);
+  imageFiles.forEach(f=>fd.append("files",f));
+  if(manifestFile) fd.append("manifest",manifestFile);
+  try{
+    const r=await fetch("/api/batch",{method:"POST",body:fd});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.detail||r.statusText);
+    allResults=data.results;
+    $("#status").textContent=`Done — ${data.count} labels${data.matched_manifest?" (compared to manifest)":" (warning-only)"}.`;
+    renderSummary(data.summary); filter="all"; renderTable();
+    $("#resultsCard").hidden=false;
+  }catch(e){
+    $("#status").textContent=""; $("#resultsCard").hidden=false;
+    $("#results").innerHTML=`<div class="err">Batch failed: ${esc(e.message)}</div>`; $("#summary").innerHTML="";
+  }finally{ $("#run").disabled=imageFiles.length===0; }
+};
+
+function renderSummary(s){
+  const total=allResults.length;
+  const pill=(key,cls,label,n)=>`<span class="pill ${cls} ${filter===key?'sel':''}" data-filter="${key}">${label}: ${n}</span>`;
+  $("#summary").innerHTML =
+    pill("all","p-all","All",total)+pill("fail","p-fail","Mismatch",s.fail||0)
+    +pill("review","p-review","Review",(s.review||0)+(s.error||0))+pill("pass","p-pass","Pass",s.pass||0);
+  document.querySelectorAll(".pill").forEach(p=>p.onclick=()=>{ filter=p.dataset.filter; renderTable();
+    document.querySelectorAll(".pill").forEach(x=>x.classList.toggle("sel",x.dataset.filter===filter)); });
+}
+
+function statusOf(r){ return r.error ? "review" : r.report.overall; }
+function renderTable(){
+  const rows=allResults.filter(r=> filter==="all" || statusOf(r)===filter );
+  if(!rows.length){ $("#results").innerHTML=`<div class="empty">No labels in this group.</div>`; return; }
+  $("#results").innerHTML=`<table><thead><tr><th style="width:24px"></th><th>File</th><th>Verdict</th><th>Issues</th></tr></thead>
+    <tbody>${rows.map((r,i)=>rowHTML(r,allResults.indexOf(r))).join("")}</tbody></table>`;
+  document.querySelectorAll("tr.main").forEach(tr=> tr.onclick=()=>toggle(tr.dataset.idx));
+  updateReviewBar();
+}
+function rowHTML(r,idx){
+  if(r.error){
+    return `<tr class="main" data-idx="${idx}"><td class="caret">▸</td><td>${esc(r.filename)}</td>
+      <td><span class="chip c-error">✕ Error</span></td><td class="issues">${esc(r.error)}</td></tr>
+      <tr class="detail" id="d-${idx}" hidden><td></td><td colspan="3" class="issues">${esc(r.error)}</td></tr>`;
+  }
+  const rep=r.report, vc={pass:"c-pass",fail:"c-fail",review:"c-review"}[rep.overall];
+  const vw={pass:"✓ Pass",fail:"✕ Mismatch",review:"! Review"}[rep.overall];
+  const issues=(rep.fields||[]).filter(f=>f.status==="fail").map(f=>f.label);
+  let issueText;
+  if(rep.multiple_products) issueText=`⚠ Multiple products (${rep.product_count||"?"}) — review individually`;
+  else if(rep.message) issueText=rep.message;
+  else issueText = issues.length? issues.join(", ") : "—";
+  return `<tr class="main" data-idx="${idx}"><td class="caret">▸</td><td>${esc(r.filename)}</td>
+    <td><span class="chip ${vc}">${vw}</span></td><td class="issues">${esc(issueText)}</td></tr>
+    <tr class="detail" id="d-${idx}" hidden><td></td><td colspan="3">${detailHTML(rep)}</td></tr>`;
+}
+function detailHTML(rep){
+  if(rep.message && !rep.is_alcohol_label) return `<div class="issues">${esc(rep.message)}</div>`;
+  const banner = rep.multiple_products ? `<div class="verdict v-review" style="margin-bottom:8px;">⚠ ${esc(rep.message||"Multiple products — values may come from different bottles; review one label per image.")}</div>` : "";
+  const VW={pass:"✓ Match",fail:"✕ Mismatch",review:"! Review",not_applicable:"– N/A"};
+  const VC={pass:"c-pass",fail:"c-fail",review:"c-review",not_applicable:"c-na"};
+  return banner + `<table><tbody>${(rep.fields||[]).map(f=>`
+    <tr><td class="rname">${esc(f.label)}</td>
+      <td>App: ${esc(f.expected)||"—"}<br>Label: ${esc(f.detected)||"—"}<div class="issues">${esc(f.reason)}</div></td>
+      <td><span class="chip ${VC[f.status]}">${VW[f.status]}</span></td></tr>`).join("")}</tbody></table>`;
+}
+function toggle(idx){ const d=$("#d-"+idx); if(!d) return; d.hidden=!d.hidden;
+  const c=document.querySelector(`tr.main[data-idx="${idx}"] .caret`); if(c) c.textContent=d.hidden?"▸":"▾"; }
+
+function esc(s){ return s==null?"":String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+/* ---------- in-page review queue ---------- */
+let queue=[], qIdx=0, rvBoxes={}, rvRegions={}, rvConfirmed=new Set(), rvConfigured=false, rvActiveLoc=null, rvTimer=null;
+const rvImg=()=>$("#rv-img");
+function fileFor(name){ return imageFiles.find(f=>f.name===name)||null; }
+function chipCls(s){ return "c-"+(s==="not_applicable"?"na":(s||"idle")); }
+function chipTxt(s){ return {pass:"✓ Match",fail:"✕ Mismatch",review:"! Review",not_applicable:"– N/A"}[s]||"—"; }
+function setRvVerdict(kind,text){ const v=$("#rv-verdict"); v.className="verdict "+({pass:"v-pass",fail:"v-fail",review:"v-review"}[kind]||"v-idle"); v.textContent=text; }
+
+function updateReviewBar(){
+  if(!allResults.length){ $("#reviewbar").hidden=true; return; }
+  const rows=allResults.filter(r=> filter==="all" || statusOf(r)===filter );
+  const reviewed=allResults.filter(r=>r.determination).length;
+  $("#reviewbar").hidden=false;
+  $("#reviewBtn").textContent=`Review ${rows.length} ${filter==="all"?"":filter+" "}item${rows.length!==1?"s":""} one-by-one →`;
+  $("#reviewBtn").disabled=rows.length===0;
+  $("#reviewinfo").textContent = reviewed? `${reviewed} of ${allResults.length} determined — download anytime from the reviewer.` : "";
+}
+function startQueue(){
+  queue = allResults.filter(r=> filter==="all" || statusOf(r)===filter );
+  if(!queue.length) return;
+  qIdx=0; $("#reviewer").hidden=false; renderItem();
+}
+async function renderItem(){
+  const r=queue[qIdx], rep=r.report||{};
+  clearRvOverlay();
+  $("#rv-progress").textContent=`Item ${qIdx+1} of ${queue.length}`;
+  $("#rv-file").textContent=r.filename||"";
+  $("#rv-prev").disabled=qIdx===0; $("#rv-next").disabled=qIdx===queue.length-1;
+  $("#rv-decided").textContent = r.determination? `Recorded: ${r.determination}` : "";
+  if(r.error){
+    $("#rv-fields").innerHTML=`<div class="err">${esc(r.error)}</div>`;
+    setRvVerdict("fail","Could not process this label — you can still record a determination.");
+  } else if(rep.message && !rep.is_alcohol_label){
+    $("#rv-fields").innerHTML=`<div class="issues">${esc(rep.message)}</div>`;
+    setRvVerdict("fail",rep.message);
+  } else {
+    buildFields(r);
+    setRvVerdict(rep.overall,{pass:"Comparison passed",fail:"Comparison flagged a mismatch",review:"Needs review"}[rep.overall]||"");
+    if(rep.multiple_products) $("#rv-fields").insertAdjacentHTML("afterbegin",
+      `<div class="verdict v-review" style="margin-bottom:8px;">⚠ ${esc(rep.message||"Multiple products — values may come from different bottles; review one label per image.")}</div>`);
+  }
+  const file=fileFor(r.filename);
+  if(file){
+    rvImg().src=await displayURL(file);
+    rvImg().onload=()=>{ if(rvActiveLoc){ rvDraw(rvActiveLoc); rvShowZoom(rvActiveLoc); } };
+    if(!r.error && rep.extraction) rvFetchOcr(file, rep.extraction);
+  } else { rvImg().removeAttribute("src"); }
+}
+async function displayURL(file){
+  const name=(file.name||"").toLowerCase();
+  if(file.type==="image/heic"||file.type==="image/heif"|| /\.(heic|heif)$/.test(name)){
+    try{ const fd=new FormData(); fd.append("file",file); return URL.createObjectURL(await (await fetch("/api/convert",{method:"POST",body:fd})).blob()); }catch(e){}
+  }
+  return URL.createObjectURL(file);
+}
+function buildFields(r){
+  const rep=r.report||{}, byF={}; (rep.fields||[]).forEach(f=>byF[f.field]=f); const ed=r.edited||{};
+  $("#rv-fields").innerHTML = FIELDS.map(([f,label])=>{
+    const cur=byF[f]||{};
+    const base = f==="government_warning" ? (rep.extraction?rep.extraction.government_warning_text||"":"") : (cur.detected||"");
+    const val = ed[f]!=null ? ed[f] : base;
+    const input = f==="government_warning"
+      ? `<textarea class="warn" id="rvdet-${f}">${esc(val)}</textarea>`
+      : `<input class="f" id="rvdet-${f}" value="${esc(val)}" />`;
+    return `<div class="fld"><div class="fld-head"><span class="name">${label}</span><span class="ctl">
+      <span class="ocrbadge" id="rvocr-${f}" hidden></span>
+      <button class="loc" id="rvloc-${f}" hidden>⤢ locate</button>
+      <span class="chip ${chipCls(cur.status)}" id="rvchip-${f}">${chipTxt(cur.status)}</span>
+      </span></div>${input}<div class="reason" id="rvreason-${f}">${esc(cur.reason||"")}</div></div>`;
+  }).join("");
+  FIELDS.forEach(([f])=>{
+    const el=$("#rvdet-"+f);
+    if(el) el.addEventListener("input",()=>{ (r.edited=r.edited||{})[f]=el.value; clearTimeout(rvTimer); rvTimer=setTimeout(()=>rvRecompare(r),400); });
+    const lb=$("#rvloc-"+f); if(lb) lb.onclick=()=>rvLocate(f);
+  });
+}
+async function rvRecompare(r){
+  const rep=r.report||{}, byF={}; (rep.fields||[]).forEach(f=>byF[f.field]=f);
+  const detected={is_alcohol_label:true, government_warning_bold_visual:(rep.extraction?rep.extraction.government_warning_bold_visual:null)};
+  FIELDS.forEach(([f])=>{ const el=$("#rvdet-"+f); if(!el) return; if(f==="government_warning") detected.government_warning_text=el.value||null; else detected[f]=el.value||null; });
+  const expected={}; FIELDS.forEach(([f])=>{ if(f==="government_warning") return; const e=byF[f]?byF[f].expected:""; if(e) expected[f]=e; });
+  const fd=new FormData(); fd.append("detected",JSON.stringify(detected)); fd.append("expected",JSON.stringify(expected)); fd.append("model_used","(review)");
+  try{
+    const rep2=await (await fetch("/api/compare",{method:"POST",body:fd})).json();
+    (rep2.fields||[]).forEach(f=>{ const c=$("#rvchip-"+f.field); if(c){ c.className="chip "+chipCls(f.status); c.textContent=chipTxt(f.status); } const rs=$("#rvreason-"+f.field); if(rs) rs.textContent=f.reason||""; });
+    setRvVerdict(rep2.overall,{pass:"Comparison passed",fail:"Comparison flagged a mismatch",review:"Needs review"}[rep2.overall]||"");
+    r.recompared=rep2;
+  }catch(e){}
+}
+/* OCR within the modal */
+async function rvFetchOcr(file, ex){
+  const detected={};
+  FIELDS.forEach(([f])=>{ if(f==="government_warning"){ if(ex.government_warning_text) detected.government_warning=ex.government_warning_text; } else if(ex[f]) detected[f]=ex[f]; });
+  if(!Object.keys(detected).length) return;
+  const fd=new FormData(); fd.append("file",file); fd.append("detected",JSON.stringify(detected));
+  try{
+    const data=await (await fetch("/api/ocr",{method:"POST",body:fd})).json();
+    rvConfigured=!!data.configured; if(!data.configured) return;
+    rvBoxes=data.boxes||{}; rvRegions=data.regions||{}; rvConfirmed=new Set(Object.keys(rvBoxes));
+    FIELDS.forEach(([f])=>{ const b=$("#rvloc-"+f); if(b) b.hidden=!(rvBoxes[f]&&rvBoxes[f].length); });
+    rvSetBadges();
+  }catch(e){}
+}
+function rvSetBadges(){ FIELDS.forEach(([f])=>{ const b=$("#rvocr-"+f); if(!b) return; const el=$("#rvdet-"+f); const det=el?el.value:""; if(!rvConfigured||!det){ b.hidden=true; return; } const ok=rvConfirmed.has(f); b.hidden=false; b.className="ocrbadge "+(ok?"ok":"no"); b.textContent=ok?"OCR ✓":"OCR ?"; b.title=ok?"Confirmed by the OCR pass":"Not found by OCR — closer look (OCR can miss stylized fonts)"; }); }
+function rvPos(){ const o=$("#rv-overlay"),i=rvImg(); o.style.left=i.offsetLeft+"px";o.style.top=i.offsetTop+"px";o.style.width=i.offsetWidth+"px";o.style.height=i.offsetHeight+"px"; }
+function rvDraw(field){ const o=$("#rv-overlay"); rvPos(); o.classList.add("dim"); const reg=rvRegions[field]; const boxes=reg?[reg.box]:(rvBoxes[field]||[]); o.innerHTML=boxes.map(([x,y,w,h])=>`<div class="ocr-box" style="left:${x*100}%;top:${y*100}%;width:${w*100}%;height:${h*100}%;"></div>`).join(""); }
+function clearRvOverlay(){ rvBoxes={};rvRegions={};rvConfirmed=new Set();rvActiveLoc=null; const o=$("#rv-overlay"); if(o){o.innerHTML="";o.classList.remove("dim");} const zp=$("#rvzoompanel"); if(zp) zp.hidden=true; }
+function rvLocate(field){ const btn=$("#rvloc-"+field); if(rvActiveLoc===field){ rvActiveLoc=null; const o=$("#rv-overlay"); o.innerHTML="";o.classList.remove("dim"); $("#rvzoompanel").hidden=true; if(btn)btn.classList.remove("active"); return; } rvActiveLoc=field; rvDraw(field); rvShowZoom(field); document.querySelectorAll("#rv-fields .loc").forEach(b=>b.classList.remove("active")); if(btn)btn.classList.add("active"); }
+function rvShowZoom(field){
+  const panel=$("#rvzoompanel"), i=rvImg();
+  let box, angle=0; const reg=rvRegions[field];
+  if(reg){ box=reg.box; angle=reg.angle||0; }
+  else { const bs=rvBoxes[field]||[]; if(!bs.length){ panel.hidden=true; return; }
+    const x0=Math.min(...bs.map(b=>b[0])), y0=Math.min(...bs.map(b=>b[1])),
+          x1=Math.max(...bs.map(b=>b[0]+b[2])), y1=Math.max(...bs.map(b=>b[1]+b[3]));
+    box=[x0,y0,x1-x0,y1-y0]; }
+  if(!i.naturalWidth){ panel.hidden=true; return; }
+  const [x,y,w,h]=box, NW=i.naturalWidth, NH=i.naturalHeight, cx=(x+w/2)*NW, cy=(y+h/2)*NH;
+  const pw=w*NW+(w*0.18*NW+10)*2, ph=h*NH+(h*0.45*NH+10)*2;
+  const rad=-angle*Math.PI/180, c=Math.abs(Math.cos(rad)), s=Math.abs(Math.sin(rad));
+  const fw=pw*c+ph*s, fh=pw*s+ph*c, scale=Math.min(6,Math.max(1.3,620/Math.max(fw,fh)));
+  const outW=Math.round(fw*scale), outH=Math.round(fh*scale);
+  const cv=$("#rvzoomcanvas"); cv.width=outW; cv.height=outH;
+  const ctx=cv.getContext("2d"); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,outW,outH);
+  ctx.translate(outW/2,outH/2); ctx.rotate(rad); ctx.scale(scale,scale); ctx.drawImage(i,-cx,-cy);
+  panel.hidden=false;
+}
+
+function rvDecide(d){ const r=queue[qIdx]; r.determination=d; r.reviewed_at=new Date().toISOString(); if(qIdx<queue.length-1){ qIdx++; renderItem(); } else { $("#rv-decided").textContent=`Recorded: ${d} (last item)`; updateReviewBar(); } }
+function exportDeterminations(){
+  const model=$("#model").selectedOptions[0]?$("#model").selectedOptions[0].text:"";
+  const FN=FIELDS.filter(x=>x[0]!=="government_warning").map(x=>x[0]);
+  const cols=["reviewed_at","image_filename","model","determination","multiple_products","overall","warning_status"];
+  FN.forEach(f=>cols.push(f+"_detected",f+"_expected",f+"_status")); cols.push("government_warning_text");
+  const rows=[cols.join(",")];
+  allResults.forEach(r=>{
+    const rep=r.report||{}, byF={}; (rep.fields||[]).forEach(f=>byF[f.field]=f); const ed=r.edited||{}; const gw=byF["government_warning"]||{};
+    const cells=[r.reviewed_at||"", r.filename||"", model, r.determination||"", rep.multiple_products?(rep.product_count||"yes"):"", r.error?"error":(rep.overall||""), gw.status||""];
+    FN.forEach(f=>{ const x=byF[f]||{}; cells.push(ed[f]!=null?ed[f]:(x.detected||""), x.expected||"", x.status||""); });
+    cells.push(ed["government_warning"]!=null?ed["government_warning"]:(rep.extraction?rep.extraction.government_warning_text||"":""));
+    rows.push(cells.map(csvCell).join(","));
+  });
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv"}));
+  a.download=`ttb-batch-review-${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.csv`; a.click();
+}
+function csvCell(v){ v=v==null?"":String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+$("#reviewBtn").onclick=startQueue;
+$("#rv-prev").onclick=()=>{ if(qIdx>0){qIdx--;renderItem();} };
+$("#rv-next").onclick=()=>{ if(qIdx<queue.length-1){qIdx++;renderItem();} };
+$("#rv-close").onclick=()=>{ $("#reviewer").hidden=true; renderTable(); };
+$("#rv-approve").onclick=()=>rvDecide("Approve");
+$("#rv-reject").onclick=()=>rvDecide("Reject");
+$("#rv-finish").onclick=exportDeterminations;
+window.addEventListener("resize",()=>{ if(!$("#reviewer").hidden && rvActiveLoc) rvPos(); });
+
+loadModels();
+</script>
+</body>
+</html>

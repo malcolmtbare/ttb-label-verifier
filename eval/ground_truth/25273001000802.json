@@ -1,0 +1,17 @@
+{
+  "ttb_id": "25273001000802",
+  "application": {
+    "brand_name": "Arthur Wheeler Spirits Company",
+    "class_type": "whisky specialties",
+    "country_of_origin": "United States"
+  },
+  "product_name": "L'heure De Feu",
+  "domestic_or_imported": "domestic",
+  "_scored_fields": [
+    "brand_name",
+    "class_type",
+    "country_of_origin",
+    "government_warning"
+  ],
+  "_excluded": "alcohol_content & net_contents \u2014 only AI-OCR values in the source (circular)."
+}
