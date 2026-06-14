@@ -113,13 +113,19 @@ def _best_run(words: list[Word], value: str) -> tuple[int, int, float] | None:
     return (best[0], best[1], best_score) if best else None
 
 
-def _locate_value(words: list[Word], value: str) -> list[tuple[float, float, float, float]]:
-    """Find the contiguous run of OCR words best matching `value`; return their boxes."""
+def _locate_word_run(words: list[Word], value: str) -> list[Word]:
+    """Find the contiguous run of OCR words best matching `value`; return the words
+    (so callers can read their boxes *and* angles)."""
     r = _best_run(words, value)
     if r and r[2] >= MATCH_THRESHOLD:
         i, size, _ = r
-        return [words[j].box for j in range(i, i + size) if _norm(words[j].text)]
+        return [words[j] for j in range(i, i + size) if _norm(words[j].text)]
     return []
+
+
+def _locate_value(words: list[Word], value: str) -> list[tuple[float, float, float, float]]:
+    """Boxes of the contiguous run of OCR words best matching `value`."""
+    return [w.box for w in _locate_word_run(words, value)]
 
 
 def _locate_region(words: list[Word], text: str) -> dict | None:
@@ -241,8 +247,9 @@ def locate(image_bytes: bytes, media_type: str, fields: dict[str, str]) -> dict:
 
     Short fields use a precise contiguous-run match; long multi-word fields (the
     government warning, the name & address) fall back to a membership union that
-    tolerates multiple lines and rotation. The warning additionally returns a region
-    with a text `angle` so the UI can straighten a rotated warning for reading.
+    tolerates multiple lines and rotation. Every located field returns a region with a
+    text `angle`, so the UI can straighten any rotated field (e.g. a name/address
+    printed vertically) in the zoom, not only the warning.
     Returns {"configured": bool, "boxes": {field: [[x,y,w,h]]}, "regions": {field: {...}}}.
     """
     words = read_words(image_bytes, media_type)
@@ -263,13 +270,22 @@ def locate(image_bytes: bytes, media_type: str, fields: dict[str, str]) -> dict:
                 regions[field] = reg
                 boxes[field] = reg["boxes"]
             continue
-        located = _locate_value(words, value)
+        matched = _locate_word_run(words, value)
         # Long fields (e.g. a multi-line bottler address) often fail a strict in-order
         # match; fall back to the membership union so they still highlight.
-        if not located and len(value.split()) >= 4:
+        if not matched and len(value.split()) >= 4:
             reg = _locate_region(words, value)
             if reg:
-                located = [tuple(b) for b in reg["boxes"]]
-        if located:
-            boxes[field] = [list(b) for b in located]
+                regions[field] = reg
+                boxes[field] = reg["boxes"]
+            continue
+        if matched:
+            import statistics as _st
+            wb = [list(w.box) for w in matched]
+            boxes[field] = wb
+            # Carry a region with the run's angle so the UI can straighten ANY rotated
+            # field in the zoom (e.g. a name/address printed vertically), not just the warning.
+            regions[field] = {"box": _union(matched),
+                              "angle": round(_st.median([w.angle for w in matched]), 1),
+                              "boxes": wb}
     return {"configured": True, "boxes": boxes, "regions": regions}
